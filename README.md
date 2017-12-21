@@ -7,7 +7,7 @@
 npm i
 ```
 
-## Useage
+## Usage
 
 Edit the config.js file:
 
