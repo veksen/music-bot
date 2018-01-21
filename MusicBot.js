@@ -28,7 +28,7 @@ client.on('message', async msg => { // eslint-disable-line
 	const url = args[1] ? args[1].replace(/<(.+)>/g, '$1') : '';
 	const serverQueue = queue.get(msg.guild.id);
 
-	let command = msg.content.toLowerCase().split(" ")[0];
+	let command = msg.content.toLowerCase().split(' ')[0];
 	command = command.slice(PREFIX.length)
 
 	if (command === 'play') {
