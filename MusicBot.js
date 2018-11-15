@@ -21,7 +21,10 @@ client.on("disconnect", () => console.log("I just disconnected, making sure you 
 
 client.on("reconnecting", () => console.log("I am reconnecting now!"));
 
-client.on("message", async msg => {
+let msg;
+
+client.on("message", async message => {
+  msg = message;
   // eslint-disable-line
   if (msg.author.bot) return undefined;
   if (!msg.content.startsWith(PREFIX)) return undefined;
@@ -45,47 +48,10 @@ client.on("message", async msg => {
       return msg.channel.send("I cannot speak in this voice channel, make sure I have the proper permissions!");
     }
 
-    if (url.match(/^https?:\/\/(www.youtube.com|youtube.com)\/playlist(.*)$/)) {
-      const playlist = await youtube.getPlaylist(url);
-      const videos = await playlist.getVideos();
-      for (const video of Object.values(videos)) {
-        const video2 = await youtube.getVideoByID(video.id); // eslint-disable-line no-await-in-loop
-        await handleVideo(video2, msg, voiceChannel, true); // eslint-disable-line no-await-in-loop
-      }
-      return msg.channel.send(`✅ Playlist: **${playlist.title}** has been added to the queue!`);
+    if (url.match(/^https?:\/\/(www.)?youtube.com\/.+(list=|playlist=)(.*)$/)) {
+      handlePlaylist(url);
     } else {
-      try {
-        var video = await youtube.getVideo(url);
-      } catch (error) {
-        try {
-          var videos = await youtube.searchVideos(searchString, 10);
-          let index = 0;
-          msg.channel.send(`
-__**Song selection:**__
-
-${videos.map(video2 => `**${++index} -** ${video2.title}`).join("\n")}
-
-Please provide a value to select one of the search results ranging from 1-10.
-					`);
-          // eslint-disable-next-line max-depth
-          try {
-            var response = await msg.channel.awaitMessages(msg2 => msg2.content > 0 && msg2.content < 11, {
-              maxMatches: 1,
-              time: 10000,
-              errors: ["time"]
-            });
-          } catch (err) {
-            console.error(err);
-            return msg.channel.send("No or invalid value entered, cancelling video selection.");
-          }
-          const videoIndex = parseInt(response.first().content);
-          var video = await youtube.getVideoByID(videos[videoIndex - 1].id);
-        } catch (err) {
-          console.error(err);
-          return msg.channel.send("🆘 I could not obtain any search results.");
-        }
-      }
-      return handleVideo(video, msg, voiceChannel);
+      handleSingleSong(searchString);
     }
   } else if (command === "skip") {
     if (!msg.member.voiceChannel) return msg.channel.send("You are not in a voice channel!");
@@ -136,7 +102,63 @@ ${serverQueue.songs.map(song => `**-** ${song.title}`).join("\n")}
   return undefined;
 });
 
-async function handleVideo(video, msg, voiceChannel, playlist = false) {
+async function handlePlaylist(url) {
+  const voiceChannel = msg.member.voiceChannel;
+
+  // if the URL does not include playlist
+  // (in format similar to https://www.youtube.com/watch?v=VIDEO_ID&list=LIST_ID)
+  if (!url.match(/playlist/)) {
+    const match = url.match(/^https?:\/\/(www.)?youtube.com\/.+(list=|playlist=)(.*)$/);
+    url = `https://www.youtube.com/playlist?list=${match[3]}`;
+  }
+
+  const playlist = await youtube.getPlaylist(url);
+  const videos = await playlist.getVideos();
+  console.log(videos);
+  for (const video of Object.values(videos)) {
+    const video2 = await youtube.getVideoByID(video.id); // eslint-disable-line no-await-in-loop
+    await handleVideo(video2, msg, voiceChannel, true); // eslint-disable-line no-await-in-loop
+  }
+  return msg.channel.send(`✅ Playlist: **${playlist.title}** has been added to the queue!`);
+}
+
+async function handleSingleSong(searchString) {
+  try {
+    var video = await youtube.getVideo(url);
+  } catch (error) {
+    try {
+      var videos = await youtube.searchVideos(searchString, 10);
+      let index = 0;
+      msg.channel.send(`
+__**Song selection:**__
+
+${videos.map(video2 => `**${++index} -** ${video2.title}`).join("\n")}
+
+Please provide a value to select one of the search results ranging from 1-10.
+      `);
+      // eslint-disable-next-line max-depth
+      try {
+        var response = await msg.channel.awaitMessages(msg2 => msg2.content > 0 && msg2.content < 11, {
+          maxMatches: 1,
+          time: 10000,
+          errors: ["time"]
+        });
+      } catch (err) {
+        console.error(err);
+        return msg.channel.send("No or invalid value entered, cancelling video selection.");
+      }
+      const videoIndex = parseInt(response.first().content);
+      var video = await youtube.getVideoByID(videos[videoIndex - 1].id);
+    } catch (err) {
+      console.error(err);
+      return msg.channel.send("🆘 I could not obtain any search results.");
+    }
+  }
+  return handleVideo(video);
+}
+
+async function handleVideo(video, playlist = false) {
+  const voiceChannel = msg.member.voiceChannel;
   const serverQueue = queue.get(msg.guild.id);
   console.log(video);
   const song = {
