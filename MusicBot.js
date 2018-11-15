@@ -128,11 +128,10 @@ async function handleSingleSong(searchString) {
   } catch (error) {
     try {
       var videos = await youtube.searchVideos(searchString, 10);
-      let index = 0;
       msg.channel.send(`
 __**Song selection:**__
 
-${videos.map(video2 => `**${++index} -** ${video2.title}`).join("\n")}
+${videos.map((video2, index) => `**${++index} -** ${video2.title}`).join("\n")}
 
 Please provide a value to select one of the search results ranging from 1-10.
       `);
