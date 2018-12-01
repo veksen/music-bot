@@ -1,5 +1,6 @@
 .env
 dist/
+src/**/*.js
 
 # Packages
 node_modules/
