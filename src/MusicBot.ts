@@ -3,9 +3,9 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 import * as Discord from "discord.js";
-import { TOKEN, PREFIX, GOOGLE_API_KEY } from "./config";
-import { YouTube, Video } from "simple-youtube-api";
+import { Video, YouTube } from "simple-youtube-api";
 import * as ytdl from "ytdl-core";
+import { GOOGLE_API_KEY, PREFIX, TOKEN } from "./config";
 
 interface Song {
   id: string;
@@ -23,8 +23,12 @@ interface Queue {
 }
 
 (async () => {
-  if (!TOKEN) return console.log("TOKEN is not set.");
-  if (!GOOGLE_API_KEY) return console.log("GOOGLE_API_KEY is not set.");
+  if (!TOKEN) {
+    return console.log("TOKEN is not set.");
+  }
+  if (!GOOGLE_API_KEY) {
+    return console.log("GOOGLE_API_KEY is not set.");
+  }
 
   const client = new Discord.Client({ disableEveryone: true });
 
@@ -41,10 +45,14 @@ interface Queue {
   let msg: Discord.Message;
 
   client.on("message", async message => {
-    msg = <Discord.Message>message;
+    msg = message as Discord.Message;
 
-    if (msg.author.bot) return undefined;
-    if (!msg.content.startsWith(PREFIX)) return undefined;
+    if (msg.author.bot) {
+      return undefined;
+    }
+    if (!msg.content.startsWith(PREFIX)) {
+      return undefined;
+    }
 
     const args = msg.content.split(" ");
     const url = args[1] ? args[1].replace(/<(.+)>/g, "$1") : "";
@@ -54,7 +62,9 @@ interface Queue {
 
     if (command === "play") {
       const voiceChannel = msg.member.voiceChannel;
-      if (!voiceChannel) return msg.channel.send("I'm sorry but you need to be in a voice channel to play music!");
+      if (!voiceChannel) {
+        return msg.channel.send("I'm sorry but you need to be in a voice channel to play music!");
+      }
       const permissions = voiceChannel.permissionsFor(msg.client.user);
       if (!permissions || !permissions.has("CONNECT")) {
         return msg.channel.send("I cannot connect to your voice channel, make sure I have the proper permissions!");
@@ -69,13 +79,15 @@ interface Queue {
     return undefined;
   });
 
-  async function handleSingleUrl(url: string) {
+  async function handleSingleUrl(url: string): Promise<any> {
     const video = await youtube.getVideo(url).catch(err => console.log(err));
-    if (!video) return msg.channel.send("🆘 I could not obtain any search results.");
+    if (!video) {
+      return msg.channel.send("🆘 I could not obtain any search results.");
+    }
     return handleVideo(video);
   }
 
-  async function handleVideo(video: Video) {
+  async function handleVideo(video: Video): Promise<any> {
     const voiceChannel = msg.member.voiceChannel;
     const serverQueue = queue.get(msg.guild.id);
     const song = {
@@ -86,7 +98,7 @@ interface Queue {
     if (!serverQueue) {
       const queueConstruct: Queue = {
         textChannel: msg.channel as Discord.TextChannel,
-        voiceChannel: voiceChannel,
+        voiceChannel,
         connection: undefined,
         songs: [song],
         volume: 5,
@@ -111,10 +123,12 @@ interface Queue {
     }
   }
 
-  function play(guild: Discord.Guild, song: Song) {
+  async function play(guild: Discord.Guild, song: Song): Promise<Discord.Message | void> {
     const serverQueue: Queue | void = queue.get(guild.id);
 
-    if (!serverQueue || !serverQueue.connection) return msg.channel.send(`Somethig unexpected happened`);
+    if (!serverQueue || !serverQueue.connection) {
+      return msg.channel.send(`Somethig unexpected happened`) as Promise<Discord.Message>;
+    }
 
     if (!song) {
       serverQueue.voiceChannel.leave();
@@ -126,8 +140,11 @@ interface Queue {
     const dispatcher = serverQueue.connection
       .playStream(ytdl(song.url))
       .on("end", reason => {
-        if (reason === "Stream is not generating quickly enough.") console.log("Song ended.");
-        else console.log(reason);
+        if (reason === "Stream is not generating quickly enough.") {
+          console.log("Song ended.");
+        } else {
+          console.log(reason);
+        }
         serverQueue.songs.shift();
         play(guild, serverQueue.songs[0]);
       })

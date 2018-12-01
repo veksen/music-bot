@@ -1,5 +1,5 @@
-export const TOKEN = process.env.TOKEN;
+export const TOKEN: string | void = process.env.TOKEN;
 
-export const PREFIX = "m!";
+export const PREFIX: string = 'm!';
 
-export const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+export const GOOGLE_API_KEY: string | void = process.env.GOOGLE_API_KEY;
