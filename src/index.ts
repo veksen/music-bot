@@ -19,6 +19,10 @@ import { Instance } from "./Instance";
   const instance = new Instance();
   const bot = await instance.init(client);
 
+  if (!bot) {
+    return console.log("Something wrong happened");
+  }
+
   client.on("warn", console.warn);
   client.on("error", console.error);
   client.on("ready", () => console.log("Bot is ready!"));

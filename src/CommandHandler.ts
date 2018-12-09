@@ -14,11 +14,6 @@ export interface CommandHandlerInterface {
 }
 
 export class CommandHandler implements CommandHandlerInterface {
-  // public commands: Command[] = [
-  //   new Command({ name: "play", aliases: [] }),
-  //   new Command({ name: "queue", aliases: ["q"] }),
-  //   new Command({ name: "np", aliases: ["playing"] })
-  // ];
   public commands: Command[] = [];
   public current: CurrentCommand;
 
@@ -36,20 +31,16 @@ export class CommandHandler implements CommandHandlerInterface {
     return this;
   }
 
-  public parse(bot: Instance, msg: Discord.Message): void {
-    const rawCmd = msg.content.slice(bot.prefix.length);
-    const argumentsArray = rawCmd
-      .toLowerCase()
-      .replace(/\W/g, " ")
-      .split(" ");
+  public parse(ctx: Instance, msg: Discord.Message): void {
+    const rawCmd = msg.content.slice(ctx.prefix.length);
+    const argumentsArray = rawCmd.replace(/\s/g, " ").split(" ");
     const [cmd, ...args] = argumentsArray;
 
     this.current = {
-      command: cmd,
+      command: cmd.toLowerCase(),
       arguments: args
     };
 
-    console.log("here?");
     console.log(this.commands);
 
     // attempt the match the command by name, or aliases
@@ -62,13 +53,7 @@ export class CommandHandler implements CommandHandlerInterface {
       return;
     }
 
-    this.validCommand(msg);
-    console.log(found);
-  }
-
-  private validCommand(msg: Discord.Message): Promise<Discord.Message | Discord.Message[]> {
-    console.log("valid command");
-    return msg.channel.send(`command: ${this.current.command} - arguments: ${this.current.arguments.join()}`);
+    found.run(ctx, msg, this.current.arguments);
   }
 
   private invalidCommand(msg: Discord.Message): Promise<Discord.Message | Discord.Message[]> {
