@@ -12,8 +12,18 @@ export const command: CommandInterface = {
     //
   },
 
-  run: (): void => {
-    console.log("the play command");
-    console.log(this.name);
+  run: (ctx, msg): void => {
+    const songs = ctx.queue.songs;
+
+    if (!songs.length) {
+      msg.channel.send("Nothing in queue!");
+      return;
+    }
+
+    msg.channel.send(
+      `Current queue:\n
+${songs.map((song, i) => `${i + 1} - **${song.title}**`).join(`\n`)}
+`
+    );
   }
 };
