@@ -12,8 +12,14 @@ export const command: CommandInterface = {
     //
   },
 
-  run: (): void => {
-    console.log("the play command");
-    console.log(this.name);
+  run: (ctx, msg): void => {
+    const current = ctx.queue.current;
+
+    if (!current) {
+      msg.channel.send("Nothing is playing!");
+      return;
+    }
+
+    msg.channel.send(`Currently playing: **${current.title}**`);
   }
 };

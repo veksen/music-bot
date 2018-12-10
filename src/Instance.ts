@@ -31,8 +31,7 @@ export class Instance implements InstanceInterface {
     this.bot = bot;
     this.prefix = PREFIX;
     this.queue = new Queue({
-      songs: [],
-      playing: false
+      songs: []
     });
 
     const handler = new CommandHandler();

@@ -8,7 +8,8 @@ export interface QueueInterface {
   voiceChannel?: Discord.VoiceChannel;
   connection?: Discord.VoiceConnection;
   songs: Song[];
-  playing: boolean;
+  current?: Song | null;
+  playing?: boolean;
 }
 
 export class Queue implements QueueInterface {
@@ -16,6 +17,7 @@ export class Queue implements QueueInterface {
   public voiceChannel?: Discord.VoiceChannel;
   public connection?: Discord.VoiceConnection;
   public songs: Song[];
+  public current: Song | null;
   public playing: boolean;
 
   constructor(queue: QueueInterface) {
@@ -23,7 +25,8 @@ export class Queue implements QueueInterface {
     this.voiceChannel = queue.voiceChannel;
     this.connection = queue.connection;
     this.songs = queue.songs = [];
-    this.playing = queue.playing;
+    this.current = queue.current = null;
+    this.playing = queue.playing = false;
   }
 
   public add(song: Song): void {
@@ -50,10 +53,12 @@ export class Queue implements QueueInterface {
     if (ctx.queue.playing) {
       return;
     }
+
     ctx.queue.connection
       .playStream(ytdl(song.url))
       .on("start", () => {
         this.playing = true;
+        this.current = song;
       })
       .on("end", reason => {
         if (reason === "Stream is not generating quickly enough.") {
@@ -62,6 +67,8 @@ export class Queue implements QueueInterface {
           console.log(reason);
         }
         this.songs.shift();
+        this.playing = false;
+        this.current = null;
         // play(guild, song);
       })
       .on("error", error => console.error(error));
